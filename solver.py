@@ -50,6 +50,15 @@ class ShortestCommonSuperstring:
                 raise PermissionError(f"Solver path \"{self.solver_path}\" is not executable")
 
     def load_input(self):
+        """
+        Loads binary strings from the input file specified by `self.input_path`.
+
+        Each non-empty line is stripped of whitespace and validated to contain only '0' and '1' characters.
+        Stores the total length of the strings and the length of the longest string.
+
+        Raises:
+            ValueError: If a string contains characters other than '0' and '1'.
+        """
         with open(self.input_path, "r") as file:
             for line in file:
                 string = line.strip()
@@ -149,7 +158,45 @@ class ShortestCommonSuperstring:
         model = self.parse_glucose_output(self.run_solver())
         return self.decode_result(model)
 
+    def find_min(self) -> str:
+        self.load_input()
 
+        if self.verbose:
+            print("Input successfully loaded.")
+
+        low = self.longest_str
+        high = self.total_length
+        result = None
+        steps = 0
+
+        while low <= high:
+            steps += 1
+            mid = (low + high) // 2
+            self.k = mid
+            self.encode()
+
+            if self.verbose:
+                print(f"Trying with k={self.k}")
+
+            model = self.parse_glucose_output(self.run_solver())
+            decoded_result = self.decode_result(model)
+
+            if decoded_result:
+                result = decoded_result
+                high = mid - 1
+
+                if self.verbose:
+                    print(f"Found a solution for k={self.k}")
+                    print()
+            else:
+                if self.verbose:
+                    print(f"Solution for k={self.k} doesn't exist")
+                    print()
+                low = mid + 1
+
+        if self.verbose:
+            print(f"Completed in {steps} steps.")
+        return result
 
     def parse_glucose_output(self, output):
         model = []
@@ -207,6 +254,8 @@ if (__name__ == "__main__"):
                 print(f"The shortest superstring of length {len(res)} is: {res}")
             else:
                 print(f"A superstring of length {args.k} doesn't exist.")
-        solver = ShortestCommonSuperstring(args.k, args.solver, args.output, args.input)
+        else:
+            res = solver.find_min()
+            print(f"The shortest superstring has length {len(res)} and is: {res}")
     except Exception as e:
         print(f"An error occurred: {e}")
