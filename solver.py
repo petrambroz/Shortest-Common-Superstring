@@ -11,6 +11,38 @@ class ShortestCommonSuperstring:
         self.input_path = input_path
 
         self.strings = []
+        self.sanity_checks()
+
+    def sanity_checks(self):
+        """
+        Perform various checks to ensure the input, output, and solver paths are valid.
+        Raises appropriate exceptions if any checks fail.
+        """
+        # check the input file
+        if not os.path.exists(self.input_path):
+            raise FileNotFoundError(f"Input file \"{self.input_path}\" does not exist")
+        if os.path.isdir(self.input_path):
+            raise IsADirectoryError(f"Input path \"{self.input_path}\" is a directory, not a file")
+        if not os.access(self.input_path, os.R_OK):
+            raise PermissionError(f"Input file \"{self.input_path}\" is not readable")
+        if os.path.getsize(self.input_path) == 0:
+            raise ValueError(f"Input file \"{self.input_path}\" is empty")
+
+        # check the output file
+        if os.path.isdir(self.output_path):
+            raise IsADirectoryError(f"Output path \"{self.output_path}\" is a directory, not a file")
+        if os.path.exists(self.output_path) and not os.access(self.output_path, os.W_OK):
+            raise PermissionError(f"Output file \"{self.output_path}\" is not writable")
+
+        # check the solver path
+        if not any(os.access(os.path.join(path, self.solver_path), os.X_OK)
+                   for path in os.environ["PATH"].split(os.pathsep)):
+            if not os.path.exists(self.solver_path):
+                raise FileNotFoundError(f"Solver path \"{self.solver_path}\" does not exist")
+            if os.path.isdir(self.solver_path):
+                raise IsADirectoryError(f"Solver path \"{self.solver_path}\" is a directory, not a file")
+            if not os.access(self.solver_path, os.X_OK):
+                raise PermissionError(f"Solver path \"{self.solver_path}\" is not executable")
 
     def load_input(self):
         with open(self.input_path, "r") as file:
