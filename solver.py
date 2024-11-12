@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 import subprocess
+import os
 from argparse import ArgumentParser
 
 
 class ShortestCommonSuperstring:
-    def __init__(self, k: int, solver_path: str, output_path: str, input_path: str):
-        self.k = k
+    def __init__(self, solver_path: str, output_path: str, input_path: str, verbose: bool):
+        self.x = {}
+        self.y = {}
         self.solver_path = solver_path
         self.output_path = output_path
         self.input_path = input_path
+        self.verbose = verbose
 
+        self.longest_str = 0
+        self.total_length = 0
         self.strings = []
         self.sanity_checks()
 
@@ -48,10 +53,13 @@ class ShortestCommonSuperstring:
         with open(self.input_path, "r") as file:
             for line in file:
                 string = line.strip()
-                if string:
-                    if not all(c in '01' for c in string):
-                        raise ValueError("Input string contains characters other than '0' and '1'")
-                    self.strings.append(string)
+                if not string:
+                    continue
+                if any(c not in '01' for c in string):
+                    raise ValueError("Input string contains characters other than '0' and '1'")
+                self.strings.append(string)
+                self.total_length += len(string)
+                self.longest_str = max(self.longest_str, len(string))
 
     def write_to_file(self, clauses):
         with open(self.output_path, 'w') as f:
@@ -63,25 +71,89 @@ class ShortestCommonSuperstring:
 
     def encode(self):
         clauses = []
+        var_count = 1
+        self.x = [0] * (2 * self.k)
+
+        for i in range(2 * self.k):
+            self.x[i] = var_count
+            var_count += 1
+
+        for i in range(len(self.strings)):
+            for j in range(self.k - len(self.strings[i]) + 1):
+                self.y[(i, j)] = var_count
+                var_count += 1
+
+        # ensure every position in superstring is either 0 or 1
+        for i in range(self.k):
+            clauses.append([self.x[(2*i)], self.x[(2*i+1)]])
+            clauses.append([-self.x[(2*i)], -self.x[(2*i+1)]])
+
+        # ensuure each string has exactly 1 starting position
+        for i, string in enumerate(self.strings):
+            valid_positions = [
+                self.y[(i, j)]
+                for j in range(self.k - len(string) + 1)
+            ]
+            clauses.append(valid_positions)
+            for j in range(self.k - len(string) + 1):
+                for k in range(j + 1, self.k - len(string) + 1):
+                    clauses.append([-self.y[(i, j)], -self.y[(i, k)]])
+
+        # ensure that characters after a starting position match characters in the given string
+        for i, string in enumerate(self.strings):
+            for j in range(self.k - len(string) + 1):
+                for k in range(len(string)):
+                    char_value = int(string[k])
+                    clauses.append([-self.y[(i, j)], -self.x[2 * (j + k) + 1 - char_value]])
+
         self.write_to_file(clauses)
 
-    def decode_result(self):
-        pass
+    def decode_result(self, model) -> str | None:
+        if model:
+            result = [''] * self.k
+            for i in range(self.k):
+                if (2*i+1) in model:
+                    result[i] = '0'
+                elif (2*i+2) in model:
+                    result[i] = '1'
+            return ''.join(result).strip()
+        else:
+            return None
 
-    def run_solver(self):
-        result = subprocess.run([self.solver_path, "-model", "-verb=0", self.output_path])
+    def run_solver(self) -> str:
+        result = subprocess.run([self.solver_path, "-model", "-verb=0", self.output_path],
+                                capture_output=True, text=True)
         return result.stdout
 
-    def solve(self):
-        self.load_input()
-        self.encode()
-        self.run_solver()
-        result = self.decode_result()
-        return result
+    def solve(self, k: int) -> str | None:
+        self.k = k
+        if not isinstance(self.k, int) or self.k <= 0:
+            raise ValueError("k must be a whole number greater than 0")
 
-    def parse_glucose_output(self):
+        self.load_input()
+
+        if k < self.longest_str:
+            raise ValueError(
+                f"k must be at least {self.longest_str}, "
+                "which is the length of the longest string in the input."
+            )
+
+        if self.verbose:
+            print("Input successfully loaded.")
+
+        self.encode()
+
+        if self.verbose:
+            print("Problem encoded into CNF, starting Glucose...")
+
+        model = self.parse_glucose_output(self.run_solver())
+        return self.decode_result(model)
+
+
+
+    def parse_glucose_output(self, output):
         model = []
-        for line in self.output_path.splitlines():
+        for line in output.splitlines():
             if line.startswith('v'):
                 model.extend(map(int, line.split()[1:]))
         return model
@@ -114,7 +186,13 @@ def parse_args():
         "-k",
         type=int,
         help=("Maximum length of the superstring."),
-        required=True
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        default=False,
+        action="store_true",
+        help=("Increase output verbosity.")
     )
     return parser.parse_args()
 
@@ -122,6 +200,13 @@ def parse_args():
 if (__name__ == "__main__"):
     args = parse_args()
     try:
+        solver = ShortestCommonSuperstring(args.solver, args.output, args.input, args.verbose)
+        if args.k is not None:
+            res = solver.solve(args.k)
+            if res:
+                print(f"The shortest superstring of length {len(res)} is: {res}")
+            else:
+                print(f"A superstring of length {args.k} doesn't exist.")
         solver = ShortestCommonSuperstring(args.k, args.solver, args.output, args.input)
     except Exception as e:
         print(f"An error occurred: {e}")
