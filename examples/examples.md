@@ -17,7 +17,7 @@ Use:
 ./solver.py -v -k 4 -i examples/simple_nonexistent_for_k=4
 ```
 ## non-trivial example
-The input consists of 11 strings of a combined length of 118 characters and the longest string being 16 characters. The shortest superstring is certainly between 16 and 108 characters long. The program starts with k=62 and then continues to search for the lowest possible *k* using binary search. The resulting superstring should be 66 characters long.
+The input consists of 11 strings of a combined length of 118 characters and the longest string being 16 characters. The shortest superstring is certainly between 16 and 108 characters long. The program starts with k=62 and then continues to search for the lowest possible *k* using binary search. The resulting superstring should be 66 characters long and should be found in 7 steps.
 Use:
 ```
 ./solver.py -v -i examples/nontrivial.txt

@@ -1,21 +1,21 @@
 # Shortest Common Superstring Solver
 
 ## Overview
-This is a Python implementation of the [Shorest Common Superstring](https://cgi.csc.liv.ac.uk/~ped/teachadmin/COMP202/annotated_np.html/#p16) problem. The input is a finite set of binary strings, the output is whether a binary string of lenght at most k containing all binary strings from the input exists. This problem is NP-complete.
+This is a Python implementation of the [Shortest Common Superstring](https://cgi.csc.liv.ac.uk/~ped/teachadmin/COMP202/annotated_np.html/#p16) problem. The input is a finite set of binary strings, and the output is whether a binary string of length at most *k* containing all binary strings from the input exists. This problem is NP-complete.
 
 ## What this implementation does
-The main Python script accepts an input file with binary strings and an optional argument `k`. If `k` is provided, the script searches for a superstring of length exactly *k*. If *k* is not provided, the script finds the lowest *k* thath a superstring of such length contains all the input binary strings. The problem is encoded into a CNF formula, which is then solved by a SAT solver. The script outputs the superstring or indicates that no such superstring exists.
+The main Python script accepts an input file with binary strings and an optional argument `k`. If `k` is provided, the script searches for a superstring of length exactly *k*. If `k` is not provided, the script finds the lowest *k* such that a superstring of that length contains all the input binary strings. The problem is encoded into a CNF formula, which is then solved by a SAT solver. The script outputs the superstring or indicates that no such superstring exists.
 
 ## User documentation
 
 ### Requirements
 
 The user is expected to have Python3 installed on their system. This script was tested on Python version 3.12.
-A Glucose SAT solver should be available, more in [Glucose SAT solver](#glucose-sat-solver).
+A Glucose SAT solver is required, more in [Glucose SAT solver](#glucose-sat-solver).
 
 ### Usage
 ```
-./solver.py solver.py [-h] [-o OUTPUT] [-s SOLVER] [-i INPUT] [-k K]
+./solver.py [-h] [-o OUTPUT] [-s SOLVER] [-i INPUT] [-k K]
 ```
 Command line arguments:
 * `-h`, `--help`: show a help message
@@ -39,7 +39,7 @@ This script relies on the [Glucose](https://www.labri.fr/perso/lsimon/research/g
 This whole project is assumed to be used under a Linux or MacOS environment. In case you prefer using Windows, it's recommended to use WSL or a virtual machine.
 
 ### Input
-The input shall be stored in a text file, either in `input.txt` in the scripts directory as a default, or in any other file specified in the arguments. It must contain binary strings separated by newline. Empty lines are ignored. Example input:
+The input shall be stored in a text file, either in `input.txt` in the script's directory as a default, or in any other file specified in the arguments. It must contain binary strings separated by newline. Empty lines are ignored. Example input:
 ```
 1110101010
 10101
@@ -52,18 +52,17 @@ Usage:
 ```
 ./generator.py -m MAX_LENGTH -n COUNT
 ```
-where MAX_LENGTH is the maximum number of characters of each string and COUNT is the number of strings to generate. The ninimum length of a string is 3 characters.
-
+where MAX_LENGTH is the maximum number of characters of each string and COUNT is the number of strings to generate. The minimum length of a string is 3 characters.
 
 ## Detailed problem description
 
-This is the specifiation of the problem from [cgi.csc.liv.ac.uk](https://cgi.csc.liv.ac.uk/~ped/teachadmin/COMP202/annotated_np.html/#p16)
+This is the specification of the problem from [cgi.csc.liv.ac.uk](https://cgi.csc.liv.ac.uk/~ped/teachadmin/COMP202/annotated_np.html/#p16)
 
 **Name:** Shortest Common Superstring [SR9] 3
 
 **Input:** A finite set *R={r<sub>1</sub>,r<sub>2</sub>,...,r<sub>m</sub>}* of binary strings (sequences of *0* and *1*); positive integer *k*.
 
-**Question:** Is there a binary string *w* of length at most *k* such that every string in *R* is a substring of *w*, i.e. for each *r* in *R*, *w* can be decomposed as *w=w<sub>0</sub>rw<sub>1</sub>* where *w<sub>1</sub>*, *w<sub>1</sub>* are (possibly empty) binary strings?
+**Question:** Is there a binary string *w* of length at most *k* such that every string in *R* is a substring of *w*, i.e. for each *r* in *R*, *w* can be decomposed as *w=w<sub>0</sub>rw<sub>1</sub>* where *w<sub>0</sub>*, *w<sub>1</sub>* are (possibly empty) binary strings?
 
 **Comments:** General problem allows more than two symbols (i.e. not just binary), but this simpler version remains NP-complete.
 
@@ -95,4 +94,8 @@ The encoding process translates the problem of finding the shortest common super
         (NOT y[i, j] OR NOT x[2*(j+s) + 1 - char_value]) for each character s in string[i]
         ```
 
-This encoding ensures that the SAT solver can determine whether a superstring of length `k` exists that contains all the input strings as substrings. If a solution exists, the SAT solver provides a model that can be decoded to obtain the superstring. The decoding is done by examining the value of the first 2k variables which determine the value of each bit in the result superstring (if one exists).
+This encoding ensures that the SAT solver can determine whether a superstring of length `k` exists that contains all the input strings as substrings. If a solution exists, the SAT solver provides a model that can be decoded to obtain the superstring. The decoding is done by examining the value of the first 2k variables which determine the value of each bit in the resulting superstring (if one exists).
+
+## Experiments
+The program can find a superstring of strings with a total length of about 100 characters.
+When experimenting with different *k* values, it's possible to see that the time needed by Glucose for finding the model (or showing none exists) grows when nearing the actual value of the lowest *k*. It runs very fast for small *k* when such a superstring almost trivially doesn't exist, and for large *k* where the superstring doesn't need to have as much overlap as for smaller (but possible) *k* values.
