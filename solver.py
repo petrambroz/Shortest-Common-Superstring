@@ -83,10 +83,12 @@ class ShortestCommonSuperstring:
         var_count = 1
         self.x = [0] * (2 * self.k)
 
+        # Assign unique variables for each position in the superstring
         for i in range(2 * self.k):
             self.x[i] = var_count
             var_count += 1
 
+        # Assign unique variables for each possible starting position of each string
         for i in range(len(self.strings)):
             for j in range(self.k - len(self.strings[i]) + 1):
                 self.y[(i, j)] = var_count
@@ -196,6 +198,7 @@ class ShortestCommonSuperstring:
 
         if self.verbose:
             print(f"Completed in {steps} steps.")
+
         return result
 
     def parse_glucose_output(self, output):
