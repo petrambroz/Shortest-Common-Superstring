@@ -15,7 +15,7 @@ A Glucose SAT solver is required, more in [Glucose SAT solver](#glucose-sat-solv
 
 ### Usage
 ```
-./solver.py [-h] [-o OUTPUT] [-s SOLVER] [-i INPUT] [-k K]
+./solver.py [-v] [-o OUTPUT] [-i INPUT] [-s SOLVER] [-k K]
 ```
 Command line arguments:
 * `-h`, `--help`: show a help message
@@ -97,5 +97,5 @@ The encoding process translates the problem of finding the shortest common super
 This encoding ensures that the SAT solver can determine whether a superstring of length `k` exists that contains all the input strings as substrings. If a solution exists, the SAT solver provides a model that can be decoded to obtain the superstring. The decoding is done by examining the value of the first 2k variables which determine the value of each bit in the resulting superstring (if one exists).
 
 ## Experiments
-The program can find a superstring of strings with a total length of about 100 characters.
+The program can find a superstring of strings with a total length of about 100 characters in a reasonable time.
 When experimenting with different *k* values, it's possible to see that the time needed by Glucose for finding the model (or showing none exists) grows when nearing the actual value of the lowest *k*. It runs very fast for small *k* when such a superstring almost trivially doesn't exist, and for large *k* where the superstring doesn't need to have as much overlap as for smaller (but possible) *k* values.
