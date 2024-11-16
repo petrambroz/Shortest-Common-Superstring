@@ -16,7 +16,6 @@ class ShortestCommonSuperstring:
         self.longest_str = 0
         self.total_length = 0
         self.strings = []
-        self.sanity_checks()
 
     def sanity_checks(self):
         """
@@ -119,7 +118,7 @@ class ShortestCommonSuperstring:
 
         self.write_to_file(clauses)
 
-    def decode_result(self, model) -> str | None:
+    def decode_result(self, model):
         if model:
             result = [''] * self.k
             for i in range(self.k):
@@ -131,12 +130,13 @@ class ShortestCommonSuperstring:
         else:
             return None
 
-    def run_solver(self) -> str:
+    def run_solver(self):
         result = subprocess.run([self.solver_path, "-model", "-verb=0", self.output_path],
                                 capture_output=True, text=True)
         return result.stdout
 
-    def solve(self, k: int) -> str | None:
+    def solve(self, k: int):
+        self.sanity_checks()
         self.k = k
         if not isinstance(self.k, int) or self.k <= 0:
             raise ValueError("k must be a whole number greater than 0")
@@ -160,7 +160,8 @@ class ShortestCommonSuperstring:
         model = self.parse_glucose_output(self.run_solver())
         return self.decode_result(model)
 
-    def find_min(self) -> str:
+    def find_min(self):
+        self.sanity_checks()
         self.load_input()
 
         if self.verbose:
